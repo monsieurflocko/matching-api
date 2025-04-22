@@ -6,8 +6,8 @@ app = Flask(__name__)
 # 1. CSV einlesen
 def load_companies_from_csv(filepath):
     companies = []
-    with open(filepath, mode='r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
+with open(file_path, newline='') as csvfile:
+    reader = csv.DictReader(csvfile, delimiter=';')
         for row in reader:
             companies.append({
                 "id": row["company_id"],
