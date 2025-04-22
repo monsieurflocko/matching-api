@@ -6,8 +6,8 @@ app = Flask(__name__)
 # 1. CSV einlesen
 def load_companies_from_csv(filepath):
     companies = []
-with open(file_path, newline='') as csvfile:
-    reader = csv.DictReader(csvfile, delimiter=';')
+    with open(filepath, newline='') as csvfile:
+        reader = csv.DictReader(csvfile, delimiter=';')
         for row in reader:
             companies.append({
                 "id": row["company_id"],
@@ -18,42 +18,40 @@ with open(file_path, newline='') as csvfile:
             })
     return companies
 
-# 2. Matching-Funktion
-def calculate_score(user, company):
-    differences = []
-    for key in user:
-        if key in company:
-            diff = abs(user[key] - company[key])
-            differences.append(diff)
+# 2. Matching berechnen
+def calculate_match_score(user_data, company_data):
+    diff_sum = 0
+    num_keys = 0
+    for key in ["entscheidungsstruktur", "entwicklung", "balance"]:
+        if key in user_data and key in company_data:
+            diff_sum += abs(user_data[key] - company_data[key])
+            num_keys += 1
+    if num_keys == 0:
+        return 0
+    return round(1 - (diff_sum / (2 * num_keys)), 2)
 
-    if differences:
-        score = 1 - (sum(differences) / len(differences))
-        return max(0, round(score, 2))
-    return 0
-
-# 3. POST-Endpoint
-@app.route("/match", methods=["POST"])
+# 3. API Endpoint
+@app.route('/match', methods=['POST'])
 def match():
     data = request.get_json()
+    user_data = data["user_data"]
 
-    if "user_data" not in data:
-        return jsonify({"error": "Missing user_data"}), 400
-
-    user = data["user_data"]
     companies = load_companies_from_csv("unternehmen_matching_v1.csv")
-
+    
     results = []
     for company in companies:
-        score = calculate_score(user, company)
+        score = calculate_match_score(user_data, company)
         results.append({
-            "company_id": company["id"],
-            "company_name": company["name"],
+            "company": company["name"],
             "score": score
         })
 
-    top_5 = sorted(results, key=lambda x: x["score"], reverse=True)[:5]
-    return jsonify(top_5)
+    # Top 5 Ergebnisse zurückgeben
+    results.sort(key=lambda x: x["score"], reverse=True)
+    top_matches = results[:5]
 
-# 4. Server starten
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    return jsonify(top_matches)
+
+# 4. Startpunkt (nicht notwendig auf Render)
+if __name__ == '__main__':
+    app.run(debug=True)
