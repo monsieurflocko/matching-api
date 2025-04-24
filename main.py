@@ -55,3 +55,7 @@ def match():
 # 4. Startpunkt (nicht notwendig auf Render)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
+
+# Test taetigkeit 
+taetigkeit = request.user_data.get("taetigkeit", "")
+print("Userwunsch:", taetigkeit)
